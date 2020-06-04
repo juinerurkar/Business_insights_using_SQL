@@ -14,7 +14,7 @@ Using SQL, I have tried to answer the following questions:
 5) From the customers who don't choose any particular style of eyewear, how many out of them make a purchase after opting for home try on? 
 6) Does pricing matter across styles?
 
-This repository contains the commented SQL code and the slides (with answers to all the abovementioned questions) are available at 
+This repository contains the commented SQL code and the slides (with answers to all the abovementioned questions) are available at https://juinerurkar.com/codecademy-warby-parker-gaining-business-insights-from-data-using-sql/
 
 I thank Codecademy for creating this interesting project.
 
