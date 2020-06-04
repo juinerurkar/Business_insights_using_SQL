@@ -1,0 +1,132 @@
+/*QUIZ FUNNEL*/
+/*Take a look at the first ten rows of the survey table*/
+SELECT * 
+FROM survey
+LIMIT 10;
+
+/*Find the total number of distinct users*/
+SELECT COUNT(DISTINCT(user_id)) 
+FROM survey;
+ 
+/*Count of response and percentage for every question*/
+WITH quiz_funnel AS(
+  SELECT question, 
+    COUNT(DISTINCT user_id) AS 'count'
+  FROM survey
+  GROUP BY question
+  ORDER BY question)
+SELECT question, 
+  count, 
+  1.0*count/500 AS 'percent_response'
+FROM quiz_funnel; 
+
+/*HOME TRY ON FUNNEL*/
+/*Take a look at the first five rows of the quiz table*/
+SELECT *
+FROM quiz
+LIMIT 5;
+
+/*Count by style as mentioned in the quiz*/
+SELECT COUNT(user_id) AS 'Count',
+  style
+FROM quiz
+GROUP BY style;
+
+/*Take a look at the first five rows of the home try on table*/
+SELECT *
+FROM home_try_on
+LIMIT 5;
+
+/*Take a look at the first five rows of the purchase table*/
+SELECT *
+FROM purchase
+LIMIT 5;
+
+/*Find the most popular products using the purchase table*/
+SELECT product_id,
+  COUNT(user_id) AS 'Amount Sold',
+  style,
+  model_name,
+  color,
+  price
+FROM purchase
+GROUP BY product_id
+ORDER BY 2 DESC;
+
+/*Find the amount of eyewear sold for men's and women's style*/
+SELECT COUNT(user_id) AS 'Amount Sold',
+  style
+FROM purchase
+GROUP BY style
+ORDER BY 2 DESC;
+
+SELECT COUNT(user_id) AS 'Amount Sold',
+  price,
+  style
+FROM purchase
+GROUP BY price, style
+ORDER BY 1 DESC;
+
+/*Merge table quiz, home try on and purchase*/
+SELECT quiz.user_id,
+  home.user_id IS NOT NULL AS 'is_home_try_on',
+  home.number_of_pairs AS 'number_of_pairs',
+  pur.user_id IS NOT NULL AS 'is_purchase'
+FROM quiz
+LEFT JOIN home_try_on AS 'home'
+  ON home.user_id = quiz.user_id
+LEFT JOIN purchase as 'pur'
+  ON pur.user_id = home.user_id
+LIMIT 10;
+
+/*Count the number of customers who opted for home try on and made a purchase by grouping on style and number of pairs*/
+WITH style_funnel AS
+(SELECT quiz.user_id,
+  quiz.style,
+  home.user_id IS NOT NULL AS 'is_home_try_on',
+  home.number_of_pairs AS 'number_of_pairs',
+  pur.user_id IS NOT NULL AS 'is_purchase'
+FROM quiz
+LEFT JOIN home_try_on AS 'home'
+  ON home.user_id = quiz.user_id
+LEFT JOIN purchase as 'pur'
+  ON pur.user_id = home.user_id)
+SELECT style, 
+  number_of_pairs,
+  SUM(is_home_try_on) AS 'count_home_try_on',
+  SUM(is_purchase) AS 'count_purchase'
+FROM style_funnel
+WHERE number_of_pairs IS NOT NULL
+GROUP BY style,number_of_pairs;
+
+/*Conversion rates - Home try on and Purchase*/
+WITH home_funnel AS
+(SELECT quiz.user_id,
+  home.user_id IS NOT NULL AS 'is_home_try_on',
+  home.number_of_pairs AS 'number_of_pairs',
+  pur.user_id IS NOT NULL AS 'is_purchase'
+FROM quiz
+LEFT JOIN home_try_on AS 'home'
+  ON home.user_id = quiz.user_id
+LEFT JOIN purchase as 'pur'
+  ON pur.user_id = home.user_id)
+SELECT 1.0*SUM(is_home_try_on)/COUNT(user_id) AS 'percent_try_on',
+  1.0*SUM(is_purchase)/SUM(is_home_try_on) AS 'percent_purchase'
+FROM home_funnel;
+
+/*Conversion rates for purchase grouped by control and intervention*/
+WITH purchase_funnel AS
+(SELECT quiz.user_id,
+  home.user_id IS NOT NULL AS 'is_home_try_on',
+  home.number_of_pairs AS 'number_of_pairs',
+  pur.user_id IS NOT NULL AS 'is_purchase'
+FROM quiz
+LEFT JOIN home_try_on AS 'home'
+  ON home.user_id = quiz.user_id
+LEFT JOIN purchase as 'pur'
+  ON pur.user_id = home.user_id)
+SELECT number_of_pairs AS 'Number of Pairs',
+  100*SUM(is_purchase)/SUM(is_home_try_on) AS 'Percent Purchased'
+FROM purchase_funnel
+WHERE number_of_pairs IS NOT NULL
+GROUP BY number_of_pairs;
